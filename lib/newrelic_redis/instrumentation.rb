@@ -26,13 +26,13 @@ DependencyDetection.defer do
 
       def call_with_newrelic_trace(*args, &blk)
         if NewRelic::Agent::Instrumentation::MetricFrame.recording_web_transaction?
-          total_metric = 'Database/Redis/allWeb'
+          total_metric = 'External/Redis/allWeb'
         else
-          total_metric = 'Database/Redis/allOther'
+          total_metric = 'External/Redis/allOther'
         end
 
         method_name = args[0].is_a?(Array) ? args[0][0] : args[0]
-        metrics = ["Database/Redis/#{method_name.to_s.upcase}", total_metric]
+        metrics = ["External/Redis/#{method_name.to_s.upcase}", total_metric]
 
         self.class.trace_execution_scoped(metrics) do
           start = Time.now
@@ -55,20 +55,20 @@ DependencyDetection.defer do
       if public_method_defined? :call_pipelined
         def call_pipelined_with_newrelic_trace(commands, *rest)
           if NewRelic::Agent::Instrumentation::MetricFrame.recording_web_transaction?
-            total_metric = 'Database/Redis/allWeb'
+            total_metric = 'External/Redis/allWeb'
           else
-            total_metric = 'Database/Redis/allOther'
+            total_metric = 'External/Redis/allOther'
           end
 
           # Report each command as a metric under pipelined, so the user
           # can at least see what all the commands were. This prevents
           # metric namespace explosion.
 
-          metrics = ["Database/Redis/Pipelined", total_metric]
+          metrics = ["External/Redis/Pipelined", total_metric]
 
           commands.each do |c|
             name = c.kind_of?(Array) ? c[0] : c
-            metrics << "Database/Redis/Pipelined/#{name.to_s.upcase}"
+            metrics << "External/Redis/Pipelined/#{name.to_s.upcase}"
           end
 
           self.class.trace_execution_scoped(metrics) do

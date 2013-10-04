@@ -7,6 +7,8 @@ require 'new_relic/agent/method_tracer'
 DependencyDetection.defer do
   @name = :redis
 
+  METRIC_NAMESPACE = 'External/our.redis.server.com'
+
   depends_on do
     defined?(::Redis) &&
       !NewRelic::Control.instance['disable_redis'] &&
@@ -26,13 +28,13 @@ DependencyDetection.defer do
 
       def call_with_newrelic_trace(*args, &blk)
         if NewRelic::Agent::Instrumentation::MetricFrame.recording_web_transaction?
-          total_metric = 'External/Redis/allWeb'
+          total_metric = "#{METRIC_NAMESPACE}/allWeb"
         else
-          total_metric = 'External/Redis/allOther'
+          total_metric = "#{METRIC_NAMESPACE}/allOther"
         end
 
         method_name = args[0].is_a?(Array) ? args[0][0] : args[0]
-        metrics = ["External/Redis/#{method_name.to_s.upcase}", total_metric]
+        metrics = ["#{METRIC_NAMESPACE}/#{method_name.to_s.upcase}", total_metric]
 
         self.class.trace_execution_scoped(metrics) do
           start = Time.now
@@ -55,20 +57,20 @@ DependencyDetection.defer do
       if public_method_defined? :call_pipelined
         def call_pipelined_with_newrelic_trace(commands, *rest)
           if NewRelic::Agent::Instrumentation::MetricFrame.recording_web_transaction?
-            total_metric = 'External/Redis/allWeb'
+            total_metric = "#{METRIC_NAMESPACE}/allWeb"
           else
-            total_metric = 'External/Redis/allOther'
+            total_metric = "#{METRIC_NAMESPACE}/allOther"
           end
 
           # Report each command as a metric under pipelined, so the user
           # can at least see what all the commands were. This prevents
           # metric namespace explosion.
 
-          metrics = ["External/Redis/Pipelined", total_metric]
+          metrics = ["#{METRIC_NAMESPACE}/Pipelined", total_metric]
 
           commands.each do |c|
             name = c.kind_of?(Array) ? c[0] : c
-            metrics << "External/Redis/Pipelined/#{name.to_s.upcase}"
+            metrics << "#{METRIC_NAMESPACE}/Pipelined/#{name.to_s.upcase}"
           end
 
           self.class.trace_execution_scoped(metrics) do
